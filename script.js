@@ -94,8 +94,8 @@ document.addEventListener('DOMContentLoaded', function () {
         row.className = 'grid grid-cols-[1fr_auto_auto] gap-x-2 items-center py-2 border-b';
         row.innerHTML = `
             <label for="price-edit-${type}-${id}" class="text-sm">${name}</label>
-            <div class="flex flex-col"><label class="text-xs text-gray-500 text-center">售價</label><input type="number" id="price-edit-${type}-${id}" data-target-id="${id}" data-price-type="${type}" class="form-input w-24 highlight-input px-3 py-2 border border-gray-300 rounded-md" value="${price}"></div>
-            <div class="flex flex-col"><label class="text-xs text-gray-500 text-center">底價</label><input type="number" id="base-price-edit-${type}-${id}" data-target-id="${id}" data-price-type="base${type.charAt(0).toUpperCase() + type.slice(1)}" class="form-input w-24 highlight-input px-3 py-2 border border-gray-300 rounded-md" value="${basePrice ?? price}"></div>
+            <div class="flex flex-col"><label class="text-xs text-gray-500 text-center">售價</label><input type="number" id="price-edit-${type}-${id}" data-target-id="${id}" data-price-type="${type}" class="px-3 py-2 border border-gray-300 rounded-md w-24 highlight-input" value="${price}"></div>
+            <div class="flex flex-col"><label class="text-xs text-gray-500 text-center">底價</label><input type="number" id="base-price-edit-${type}-${id}" data-target-id="${id}" data-price-type="base${type.charAt(0).toUpperCase() + type.slice(1)}" class="px-3 py-2 border border-gray-300 rounded-md w-24 highlight-input" value="${basePrice ?? price}"></div>
         `;
         dom.priceSettingsContainer.appendChild(row);
     }
@@ -124,19 +124,37 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function handleAppClick(e) {
-        const target = e.target, card = target.closest('.package-card');
-        if (target.matches('.nav-link')) { e.preventDefault(); handleTabClick(target); }
-        else if (target.matches('.stepper-btn')) { handleStepperClick(target); }
-        else if (target.matches('.select-package-btn') && card) { selectPackage(card.dataset.packageId); }
-        else if (target.closest('.delete-custom-package-btn') && card) { if (confirm(`確定要刪除自訂方案 "${allPackages[card.dataset.packageId].name}" 嗎？`)) deleteCustomPackage(card.dataset.packageId); }
-        else if (target.closest('.compare-btn') && card) { toggleCompare(card.dataset.packageId, target.closest('.compare-btn')); }
-        else if (target.id === 'clear-quote') { if (confirm('確定要清空所有已選的服務項目嗎？客戶資料將會保留。')) clearQuoteData(); }
-        else if (target.id === 'print-quote') { printQuote(); }
-        else if (target.id === 'clear-customer-info') { clearCustomerInfo(); }
-        else if (target.id === 'save-as-package') { saveCurrentSelectionAsPackage(); }
-        else if (target.id === 'clear-comparison') { clearComparison(); }
-        else if (target.matches('.remove-from-compare')) {
-            const id = target.dataset.id, btn = document.querySelector(`.package-card[data-package-id="${id}"] .compare-btn`);
+        const target = e.target;
+        const card = target.closest('.package-card');
+
+        if (target.matches('.nav-link')) { 
+            e.preventDefault(); 
+            handleTabClick(target); 
+        } else if (target.matches('.stepper-btn')) { 
+            handleStepperClick(target); 
+        } else if (target.matches('.select-package-btn') && card) { 
+            selectPackage(card.dataset.packageId); 
+        } else if (target.closest('.delete-custom-package-btn') && card) { 
+            if (confirm(`確定要刪除自訂方案 "${allPackages[card.dataset.packageId].name}" 嗎？`)) {
+                deleteCustomPackage(card.dataset.packageId);
+            }
+        } else if (target.closest('.compare-btn') && card) { 
+            toggleCompare(card.dataset.packageId, target.closest('.compare-btn')); 
+        } else if (target.id === 'clear-quote') { 
+            if (confirm('確定要清空所有已選的服務項目嗎？客戶資料將會保留。')) {
+                clearQuoteData();
+            }
+        } else if (target.id === 'print-quote') { 
+            printQuote(); 
+        } else if (target.id === 'clear-customer-info') { 
+            clearCustomerInfo(); 
+        } else if (target.id === 'save-as-package') { 
+            saveCurrentSelectionAsPackage(); 
+        } else if (target.id === 'clear-comparison') { 
+            clearComparison(); 
+        } else if (target.matches('.remove-from-compare')) {
+            const id = target.dataset.id;
+            const btn = document.querySelector(`.package-card[data-package-id="${id}"] .compare-btn`);
             toggleCompare(id, btn);
         }
     }
@@ -144,7 +162,25 @@ document.addEventListener('DOMContentLoaded', function () {
     function handleAppInput(e) { if (e.target.matches('.description-input, .number-input, #customer-info-form input, header input, #payment-method-notes')) { updateQuote(); saveState(); } }
     function handleAppChange(e) { if (e.target.matches('.service-checkbox, .renewal-checkbox, .mailcloud-setup-check, #include-tax-checkbox, #show-package-deal-checkbox, #show-total-only-checkbox')) { if (e.target.matches('.service-checkbox, .renewal-checkbox')) { currentPackageId = null; document.querySelectorAll('.package-card').forEach(c => c.classList.remove('ring-4', 'ring-offset-2', 'ring-blue-500')); } updateQuote(); saveState(); } }
     function handleTabClick(link) { document.querySelectorAll('.nav-link').forEach(i => i.classList.remove('active')); link.classList.add('active'); document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('hidden', c.id !== link.dataset.tab)); }
-    function handleStepperClick(btn) { const input = btn.closest('.flex.items-center').querySelector('.number-input'), step = parseFloat(btn.dataset.step) || 1, min = parseFloat(input.min) ?? 0; let val = parseFloat(input.value) || 0; val += (btn.classList.contains('plus') ? step : -step); if (val < min) val = min; input.value = step < 1 ? val.toFixed(2) : val; input.dispatchEvent(new Event('input', { bubbles: true })); }
+    
+    function handleStepperClick(btn) {
+        const wrapper = btn.closest('.number-input-wrapper');
+        if (!wrapper) return;
+        const input = wrapper.querySelector('.number-input');
+        if (!input) return;
+        
+        const step = parseFloat(btn.dataset.step) || 1;
+        const min = parseFloat(input.min) ?? 0;
+        let val = parseFloat(input.value) || 0;
+        
+        val += (btn.classList.contains('plus') ? step : -step);
+        
+        if (val < min) val = min;
+        
+        input.value = step < 1 ? val.toFixed(2) : val;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
     function handlePriceSettingChange(e) { if (e.target.matches('.highlight-input')) { const { targetId, priceType } = e.target.dataset, val = parseFloat(e.target.value) || 0; if (!priceStore[targetId]) priceStore[targetId] = {}; priceStore[targetId][priceType] = val; updatePriceDisplays(targetId, priceType, val); savePriceStore(); updateQuote(); } }
 
     // =================================================================
@@ -359,7 +395,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function loadCustomPackages() { const saved = JSON.parse(localStorage.getItem('customQuotePackages') || '{}'); Object.values(saved).forEach(pkg => { if (pkg.isCustom) { allPackages[pkg.id] = pkg; renderCustomPackage(pkg); } }); }
     function renderCustomPackage(pkg) { const card = document.createElement('div'); card.className = 'package-card border border-gray-200 rounded-lg p-5 hover:shadow-lg transition-all duration-300 relative flex flex-col'; card.dataset.packageId = pkg.id; const itemsHTML = pkg.items.map(item => { const c = document.querySelector(`[data-service-id="${item.id}"]`); if (!c) return ''; let html = ''; if (item.mainChecked) html += `<li>${c.querySelector('.service-checkbox').dataset.name}</li>`; if (item.renewalChecked) html += `<li>${c.querySelector('.renewal-checkbox').dataset.name} (${item.inputs['renewal-years'] || 1}年)</li>`; return html; }).join(''); card.innerHTML = `<button class="delete-custom-package-btn absolute top-3 left-3 text-gray-400 hover:text-red-500 transition-colors z-10"><i class="fas fa-trash-alt"></i></button><div class="absolute top-4 right-4 bg-gray-500 text-white text-xs font-bold px-2 py-1 rounded-full">自訂方案</div><h3 class="text-xl font-bold text-gray-700">${pkg.name}</h3><ul class="list-disc list-inside mt-4 text-gray-600 space-y-2 text-sm flex-grow">${itemsHTML}</ul><div class="mt-auto pt-4 text-right"><button class="mt-2 w-full bg-yellow-400 text-yellow-800 px-4 py-1.5 rounded-lg hover:bg-yellow-500 transition-colors text-sm font-bold compare-btn"><i class="fas fa-balance-scale-right mr-2"></i>加入比較</button><button class="mt-3 bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 w-full select-package-btn">選擇此方案</button></div>`; dom.packagesContainer.appendChild(card); }
     function deleteCustomPackage(id) { document.querySelector(`[data-package-id="${id}"]`)?.remove(); delete allPackages[id]; localStorage.setItem('customQuotePackages', JSON.stringify(allPackages)); updateQuote(); }
-    function addCustomItem() { const nameInput = document.getElementById('custom-item-name'), priceInput = document.getElementById('custom-item-price'), name = nameInput.value.trim(), price = parseFloat(priceInput.value); if (!name || isNaN(price)) { alert('請輸入有效的項目名稱和價格。'); return; } const id = 'custom-' + Date.now(); const html = `<div class="border border-gray-200 rounded-lg p-5 hover:shadow-lg transition-shadow duration-300" data-service-id="${id}"><div class="flex items-start justify-between"><div class="flex-1"><h3 class="text-xl font-bold text-gray-700">${name}</h3><p contenteditable="true" class="text-gray-500 mt-1 p-1 rounded hover:bg-gray-100 focus:bg-blue-50 focus:ring-1 focus:ring-blue-300 outline-none transition-colors">請在此輸入服務描述...</p></div><input type="checkbox" class="service-checkbox h-6 w-6 rounded border-gray-400 text-gray-600 focus:ring-gray-500 cursor-pointer ml-4" data-name="${name}" data-price="${price}"></div><ul contenteditable="true" class="list-disc list-inside mt-4 text-gray-600 space-y-2 p-1 rounded hover:bg-gray-100 focus:bg-blue-50 focus:ring-1 focus:ring-blue-300 outline-none transition-colors"><li>請在此編輯功能項目...</li></ul><div class="mt-2"><textarea maxlength="30" class="description-input text-sm px-3 py-2 border border-gray-300 rounded-md w-full" placeholder="備註說明 (最多30字)"></textarea></div><div class="mt-4 flex justify-end items-baseline gap-6"><p class="text-gray-500">一次性費用</p><p class="text-gray-800">費用: <span class="font-bold text-2xl text-gray-600 price-display" data-price-id="${id}">NT$ ${price.toLocaleString()}</span></p></div></div>`; dom.additionalServicesContainer.insertAdjacentHTML('beforeend', html); priceStore[id] = { price: price, basePrice: price }; savePriceStore(); addPriceSettingRow(id, name, 'price', price, price); nameInput.value = ''; priceInput.value = ''; handleTabClick(document.querySelector('[data-tab="additional-services"]')); }
+    function addCustomItem() { const nameInput = document.getElementById('custom-item-name'), priceInput = document.getElementById('custom-item-price'), name = nameInput.value.trim(), price = parseFloat(priceInput.value); if (!name || isNaN(price)) { alert('請輸入有效的項目名稱和價格。'); return; } const id = 'custom-' + Date.now(); const html = `<div class="border border-gray-200 rounded-lg p-5 hover:shadow-lg transition-shadow duration-300" data-service-id="${id}"><div class="flex items-start justify-between"><div class="flex-1"><h3 class="text-xl font-bold text-gray-700">${name}</h3><p contenteditable="true" class="text-gray-500 mt-1 p-1 rounded hover:bg-gray-100 focus:bg-blue-50 focus:ring-1 focus:ring-blue-300 outline-none transition-colors">請在此輸入服務描述...</p></div><input type="checkbox" class="service-checkbox h-6 w-6 rounded border-gray-400 text-gray-600 focus:ring-gray-500 cursor-pointer ml-4" data-name="${name}" data-price="${price}"></div><ul contenteditable="true" class="list-disc list-inside mt-4 text-gray-600 space-y-2 p-1 rounded hover:bg-gray-100 focus:bg-blue-50 focus:ring-1 focus:ring-blue-300 outline-none transition-colors"><li>請在此編輯功能項目...</li></ul><div class="mt-2"><textarea maxlength="30" class="description-input px-3 py-2 border border-gray-300 rounded-md w-full text-sm" placeholder="備註說明 (最多30字)"></textarea></div><div class="mt-4 flex justify-end items-baseline gap-6"><p class="text-gray-500">一次性費用</p><p class="text-gray-800">費用: <span class="font-bold text-2xl text-gray-600 price-display" data-price-id="${id}">NT$ ${price.toLocaleString()}</span></p></div></div>`; dom.additionalServicesContainer.insertAdjacentHTML('beforeend', html); priceStore[id] = { price: price, basePrice: price }; savePriceStore(); addPriceSettingRow(id, name, 'price', price, price); nameInput.value = ''; priceInput.value = ''; handleTabClick(document.querySelector('[data-tab="additional-services"]')); }
 
     // =================================================================
     // 8. PRINT FUNCTIONALITY
