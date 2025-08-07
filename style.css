@@ -1,0 +1,73 @@
+/* General Body and Font Styles */
+body {
+    font-family: 'Noto Sans TC', sans-serif;
+    background-color: #f7fafc;
+}
+
+/* Active Navigation Link Style */
+.nav-link.active {
+    border-bottom-color: #3b82f6;
+    color: #2563eb;
+    font-weight: 700;
+}
+
+/* Tab Content Transition */
+.tab-content {
+    transition: opacity 0.5s ease-in-out;
+}
+
+/* Scrollbar Hiding Utilities */
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.no-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+
+/* Number Input Specific Styles */
+.number-input {
+    -moz-appearance: textfield; /* Firefox */
+}
+.number-input::-webkit-inner-spin-button,
+.number-input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* Feature List Styles */
+.features-list ul {
+    list-style-position: inside;
+    padding-left: 0.5rem;
+}
+.features-list li {
+    margin-top: 0.25rem;
+}
+
+/* Print-specific styles */
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    body {
+        background-color: white !important;
+    }
+    .print-container {
+        width: 100%;
+        box-shadow: none !important;
+        margin: 0;
+        padding: 0;
+    }
+    .price-col {
+        display: table-cell;
+    }
+    .print-hide-price .price-col {
+        display: none;
+    }
+}
+
+/* Print Page Setup */
+@page {
+    size: A4;
+    margin: 1.5cm;
+}
