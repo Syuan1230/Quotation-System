@@ -116,7 +116,7 @@ document.addEventListener('DOMContentLoaded', function () {
         dom.appContainer.addEventListener('click', handleAppClick);
         dom.appContainer.addEventListener('input', handleAppInput);
         dom.appContainer.addEventListener('change', handleAppChange);
-        dom.appContainer.addEventListener('blur', (e) => { if (e.target.matches('[contenteditable="true"]')) saveState(); }, true);
+        dom.appContainer.addEventListener('blur', handleBlur, true);
         document.getElementById('open-price-settings').addEventListener('click', () => dom.priceSettingsModal.classList.remove('hidden'));
         document.getElementById('close-price-settings').addEventListener('click', () => dom.priceSettingsModal.classList.add('hidden'));
         document.getElementById('add-custom-item').addEventListener('click', addCustomItem);
@@ -169,7 +169,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const input = wrapper.querySelector('.number-input');
         if (!input) return;
         
-        const step = parseFloat(btn.dataset.step) || 1;
+        const step = parseFloat(btn.dataset.step) || parseFloat(input.step) || 1;
         const min = parseFloat(input.min) ?? 0;
         let val = parseFloat(input.value) || 0;
         
@@ -177,8 +177,40 @@ document.addEventListener('DOMContentLoaded', function () {
         
         if (val < min) val = min;
         
-        input.value = step < 1 ? val.toFixed(2) : val;
+        if (step < 1) { // It's a decimal (discount)
+            input.value = val.toFixed(2);
+        } else { // It's an integer (year/quantity)
+            input.value = Math.round(val);
+        }
+        
         input.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    function handleBlur(e) {
+        // Handle number inputs to enforce integer/decimal rules
+        if (e.target.matches('.number-input')) {
+            const input = e.target;
+            const step = parseFloat(input.step) || 1;
+            let value = parseFloat(input.value) || 0;
+            const min = parseFloat(input.min);
+
+            if (!isNaN(min) && value < min) {
+                value = min;
+            }
+
+            if (step >= 1) { // Integer fields like years, quantity
+                input.value = Math.round(value);
+            } else { // Decimal fields like discount
+                input.value = value.toFixed(2);
+            }
+            // Trigger input event to recalculate totals if value changed
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+
+        // Handle contenteditable for saving state
+        if (e.target.matches('[contenteditable="true"]')) {
+            saveState();
+        }
     }
 
     function handlePriceSettingChange(e) { if (e.target.matches('.highlight-input')) { const { targetId, priceType } = e.target.dataset, val = parseFloat(e.target.value) || 0; if (!priceStore[targetId]) priceStore[targetId] = {}; priceStore[targetId][priceType] = val; updatePriceDisplays(targetId, priceType, val); savePriceStore(); updateQuote(); } }
